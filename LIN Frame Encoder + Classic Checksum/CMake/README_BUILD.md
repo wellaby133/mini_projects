@@ -87,10 +87,7 @@ After building:
 - **CMake:** 3.10+
 - **Google Test:** Auto-downloaded by CMake
 
-## Next Steps
+## Results
 
-1. Run the build script to compile and test
-2. Verify all 40+ tests pass
-3. Modify/extend code in the `code/` folder
-4. Add new tests in `gtests/test_main.cpp`
-5. Update CMakeLists.txt files if adding new source files
+<img width="495" height="282" alt="image" src="https://github.com/user-attachments/assets/ebb4432d-0695-419d-8f26-cd449e93d20e" />
+
