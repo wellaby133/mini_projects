@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include "lin_checksum.h"
 
 int main()
 {
@@ -48,45 +49,17 @@ int main()
             continue; 
         }
 
-        /* Make a copy we can tokenize */
-        char buf[1024];
-        strncpy(buf, p, sizeof(buf)-1);
-        buf[sizeof(buf)-1] = '\0';
-        /* remove trailing newline */
-        char *nl = strchr(buf, '\n');
-        if (nl) *nl = '\0';
-
         uint8_t bytes[64];
         size_t bytes_count = 0;
 
-        char *tok = strtok(buf, " \t");
-        bool parse_error = false;
-        while (tok) {
-            /* allow tokens like '3A' or '0x3A' */
-            char *s = tok;
-            if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) s += 2;
+        if (!parse_hex_line(line, bytes, sizeof(bytes), &bytes_count)) {
+            fprintf(stderr, "Skipping line %lu: parse error\n", line_no);
+            continue;
+        }
 
-            size_t len = strlen(s);
-            if (len == 0 || len > 2) { parse_error = true; break; }
-            int hi = 0, lo = 0;
-            int v = 0;
-            for (size_t i = 0; i < len; ++i) {
-                char c = s[i];
-                int nib;
-                if (c >= '0' && c <= '9') nib = c - '0';
-                else if (c >= 'A' && c <= 'F') nib = c - 'A' + 10;
-                else if (c >= 'a' && c <= 'f') nib = c - 'a' + 10;
-                else { parse_error = true; break; }
-                v = (v << 4) | nib;
-            }
-            if (parse_error) break;
-            if (bytes_count < sizeof(bytes)) {
-                bytes[bytes_count++] = (uint8_t)(v & 0xFF);
-            } else {
-                parse_error = true;
-                break;
-            }
-            tok = strtok(NULL, " \t");
+        if (bytes_count < 2) {
+            fprintf(stderr, "Skipping line %lu: need at least PID and length\n", line_no);
+            continue;
         }
 
         uint8_t pid = bytes[0];
@@ -97,15 +70,12 @@ int main()
         }
 
         /* compute checksum */
-        unsigned sum = 0;
-        size_t data_start = 2;
+        uint8_t checksum;
         if (enhanced) {
-            sum += pid;
+            checksum = lin_checksum_enhanced(pid, &bytes[2], len);
+        } else {
+            checksum = lin_checksum_classic(&bytes[2], len);
         }
-        for (size_t i = 0; i < len; ++i) {
-            sum += bytes[data_start + i];
-        }
-        uint8_t checksum = (uint8_t)(~(sum & 0xFF) & 0xFF);
 
         /* Reconstruct original tokens for output: we'll print the original bytes and appended checksum */
         /* Print to stdout */
