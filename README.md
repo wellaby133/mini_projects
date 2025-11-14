@@ -8,4 +8,4 @@ List of Mini-Projects:
 
 C Code + Unit Test Cases written with gTest.
 
-ReadMe with all the build + execution of Unit Test Cases
+ReadMe with all of the build steps + execution of Unit Test Cases.
